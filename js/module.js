@@ -70,11 +70,21 @@ AppCore.module = (function() {
     }
   }
 
+  function stopAll() {
+    for(var key in running) {
+      var module = running[key];
+      module.stop();
+      delete running[key];
+    }
+  }
+
+
   return {
     register: register,
     getModule: getModule,
     reset: reset,
     start: start,
-    stop: stop
+    stop: stop,
+    stopAll: stopAll
   };
 }());

@@ -1,38 +1,29 @@
 (function() {
   "use strict";
 
-  var moduleConstructed = false,
-      moduleInited = false,
-      moduleInitData,
-      moduleStarted = false,
-      moduleStartData,
-      moduleStopped = false;
-
   function Module() {
-    moduleConstructed = true;
+    this.constructed = true;
   }
 
   Module.prototype = {
     constructor: Module,
     init: function(data) {
-      moduleInited = true; 
-      moduleInitData = data;
+      this.inited = true;
+      this.initData = data;
     },
 
     start: function(data) {
-      moduleStarted = true;
-      moduleStartData = data;
+      this.started = true;
+      this.startData = data;
     },
 
     stop: function() {
-      moduleStopped = true;
+      this.stopped = true;
     }
   };
 
-  module("core/module", {
+  module("appcore/module", {
     setup: function() {
-      moduleConstructed = moduleInited = moduleStarted = moduleStopped = false;
-      moduleStartData = moduleInitData = undefined;
       AppCore.module.reset();
     },
 
@@ -65,7 +56,7 @@
     try {
       AppCore.module.start("service");
     } catch(e) {
-      error = e;  
+      error = e;
     }
 
     equal(error, "module not registered for service", "exception correctly thrown");
@@ -78,12 +69,12 @@
     var startData = { someField: true };
     var module = AppCore.module.start("service", startData);
 
-    ok(moduleConstructed, "module has been constructed");
-    ok(moduleInited, "module has been inited");
-    ok(moduleInitData === initData, "initData passed in on start");
+    ok(module.constructed, "module has been constructed");
+    ok(module.inited, "module has been inited");
+    ok(module.initData === initData, "initData passed in on start");
 
-    ok(moduleStarted, "module has been started");
-    ok(moduleStartData === startData, "startData passed in on start");
+    ok(module.started, "module has been started");
+    ok(module.startData === startData, "startData passed in on start");
 
     ok(module, "module returned on start");
   });
@@ -103,10 +94,10 @@
 
   test("stop a module that is running", function() {
     AppCore.module.register("service", Module);
-    AppCore.module.start("service");
+    var module = AppCore.module.start("service");
     AppCore.module.stop("service");
 
-    ok(moduleStopped, "module has been stopped");
+    ok(module.stopped, "module has been stopped");
   });
 
   test("start a module that is already started", function() {
@@ -124,7 +115,7 @@
     equal(error, "module already running for service", "exception correctly thrown");
   });
 
-  test("restart a module that was stopped, ", function() {
+  test("restart a module that was stopped", function() {
     AppCore.module.register("service", Module);
     var module = AppCore.module.start("service");
     AppCore.module.stop("service");
@@ -132,5 +123,19 @@
 
     strictEqual(module, module2, "only one module instance ever created");
   });
+
+  test("stopAll after starting multiple modules", function() {
+    AppCore.module.register("service", Module);
+    AppCore.module.register("service2", Module);
+
+    var module = AppCore.module.start("service");
+    var module2 = AppCore.module.start("service2");
+
+    AppCore.module.stopAll();
+
+    equal(module.stopped, true, "first module stopped");
+    equal(module2.stopped, true, "second module stopped");
+  });
+
 }());
 
